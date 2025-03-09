@@ -16,6 +16,7 @@ from typing import *
 FREE = 0
 OCCUPIED = 1
 
+N_ACTIONS = 4
 UP = 0
 RIGHT = 1
 DOWN = 2
@@ -54,11 +55,13 @@ class Env:
         for target in self.target_positions:
             self.state0[2, target[0], target[1]] = 1
         self.cur_state = np.copy(self.state0)
+        self.max_episode_steps = self.map_size[0] * self.map_size[1] * 50
 
     def reset(self):
         self.robot_position = list(self.init_position)
         self.history.clear()
         self.cur_state = np.copy(self.state0)
+        return self.cur_state
 
     def to_json(self) -> str:
         env_dict = {
