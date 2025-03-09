@@ -60,7 +60,7 @@ class Env:
         self.history.clear()
         self.cur_state = np.copy(self.state0)
 
-    def env_to_json(self) -> str:
+    def to_json(self) -> str:
         env_dict = {
             "map_size": self.map_size,
             "init_position": self.init_position,
@@ -70,7 +70,7 @@ class Env:
         }
         return json.dumps(env_dict)
 
-    @classmethod
+    @staticmethod
     def json_to_env(json_str: str):
         env_dict = json.loads(json_str)
         map_size = tuple(env_dict["map_size"])
