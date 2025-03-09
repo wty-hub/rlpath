@@ -47,7 +47,7 @@ class ReplayMemory:
 class DQN(nn.Module):
     def __init__(self, state_space, action_space_dim):
         super().__init__()
-        t = torch.zeros(state_space)
+        t = torch.zeros((1, *state_space))
 
         self.conv1 = nn.Conv2d(3, 16, 4, 1)
         t = self.conv1(t)
@@ -55,9 +55,9 @@ class DQN(nn.Module):
         self.conv2 = nn.Conv2d(16, 32, 4, 1)
         t = self.conv2(t)
 
-        t = t.flatten()
+        t = t.view(t.shape[0], -1)
 
-        self.fc1 = nn.Linear(t.shape[0], 64)
+        self.fc1 = nn.Linear(t.shape[1], 64)
         self.fc2 = nn.Linear(64, action_space_dim)
 
     def forward(self, x):

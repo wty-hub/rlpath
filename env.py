@@ -88,14 +88,14 @@ class Env:
         return np.all(self.cur_state[UNVISITED_TARGETS_IDX] == FREE)
 
     def legal(self, position):
-        if self.cur_state[OBSTACLE_IDX, position[0], position[1]] == OCCUPIED:
-            return False
         if (
             position[0] < 0
             or position[0] >= self.map_size[0]
             or position[1] < 0
             or position[1] >= self.map_size[1]
         ):
+            return False
+        if self.cur_state[OBSTACLE_IDX, position[0], position[1]] == OCCUPIED:
             return False
         return True
 
@@ -115,10 +115,10 @@ class Env:
         if not self.legal(next_position):
             reward -= 0.5
         self.robot_position[0] = np.clip(
-            self.robot_position[0] + action[0], 0, self.map_size[0]
+            self.robot_position[0] + action[0], 0, self.map_size[0] - 1
         )
         self.robot_position[1] = np.clip(
-            self.robot_position[1] + action[1], 0, self.map_size[1]
+            self.robot_position[1] + action[1], 0, self.map_size[1] - 1
         )
         self.cur_state[
             ROBOT_POSITION_IDX, self.robot_position[0], self.robot_position[1]
