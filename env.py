@@ -106,7 +106,7 @@ class Env:
         self.cur_state[
             ROBOT_POSITION_IDX, self.robot_position[0], self.robot_position[1]
         ] = FREE
-        self.history.append(action)
+        
         last_position = self.robot_position.copy()
         next_position = (
             self.robot_position[0] + action[0],
@@ -137,7 +137,7 @@ class Env:
             ] = FREE
             reward += 100.0
             self.cur_state[UNVISITED_TARGETS_IDX]
-
+        self.history.append(self.robot_position.copy())
         if self.win():
             return self.cur_state, reward, True, None
         else:

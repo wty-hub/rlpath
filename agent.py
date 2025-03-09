@@ -64,7 +64,8 @@ class DQN(nn.Module):
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         # print("x.shape:" + str(x.shape))
-        x = x.flatten()
+        x = x.view(x.shape[0], -1)
+
         # print("x.shape after view:" + str(x.shape))
 
         x = F.relu(self.fc1(x))
