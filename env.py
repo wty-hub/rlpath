@@ -55,13 +55,16 @@ class Env:
         for target in self.target_positions:
             self.state0[2, target[0], target[1]] = 1
         self.cur_state = np.copy(self.state0)
-        self.max_episode_steps = self.map_size[0] * self.map_size[1] * 50
+        self.target_set = set(self.target_positions)
+        self.path_length = 0
 
     def reset(self):
         self.robot_position = list(self.init_position)
         self.history.clear()
         self.cur_state = np.copy(self.state0)
-        return self.cur_state
+        self.target_set = set(self.target_positions)
+        self.path_length = 0
+        return self.cur_state.copy()
 
     def to_json(self) -> str:
         env_dict = {
@@ -78,14 +81,14 @@ class Env:
         env_dict = json.loads(json_str)
         map_size = tuple(env_dict["map_size"])
         init_position = tuple(env_dict["init_position"])
-        target_positions = env_dict["target_positions"]
-        obstacle_positions = env_dict["obstacle_positions"]
+        target_positions = [tuple(p) for p in env_dict["target_positions"]]
+        obstacle_positions = [tuple(p) for p in env_dict["obstacle_positions"]]
         env = Env(map_size, init_position, target_positions, obstacle_positions)
         env.grid = np.array(env_dict["grid"])
         return env
 
     def win(self):
-        return np.all(self.cur_state[UNVISITED_TARGETS_IDX] == FREE)
+        return len(self.target_set) == 0
 
     def legal(self, position):
         if (
@@ -99,49 +102,52 @@ class Env:
             return False
         return True
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, None]:
+    def step(self, action: int, record=False) -> Tuple[np.ndarray, float, bool, None]:
         """返回 奖励，是否结束"""
         reward = -1.0
+        self.path_length += 1
         action = self.action_space[action]
-        self.cur_state[
-            ROBOT_POSITION_IDX, self.robot_position[0], self.robot_position[1]
-        ] = FREE
-        
-        last_position = self.robot_position.copy()
         next_position = (
             self.robot_position[0] + action[0],
             self.robot_position[1] + action[1],
         )
         if not self.legal(next_position):
-            reward -= 0.5
-        self.robot_position[0] = np.clip(
-            self.robot_position[0] + action[0], 0, self.map_size[0] - 1
-        )
-        self.robot_position[1] = np.clip(
-            self.robot_position[1] + action[1], 0, self.map_size[1] - 1
-        )
-        self.cur_state[
-            ROBOT_POSITION_IDX, self.robot_position[0], self.robot_position[1]
-        ] = OCCUPIED
-        if self.grid[self.robot_position[0]][self.robot_position[1]] == OCCUPIED:
-            self.robot_position = last_position
-
-        if (
-            self.cur_state[
-                UNVISITED_TARGETS_IDX, self.robot_position[0], self.robot_position[1]
-            ]
-            == OCCUPIED
-        ):
-            self.cur_state[
-                UNVISITED_TARGETS_IDX, self.robot_position[0], self.robot_position[1]
-            ] = FREE
-            reward += 100.0
-            self.cur_state[UNVISITED_TARGETS_IDX]
-        self.history.append(self.robot_position.copy())
-        if self.win():
-            return self.cur_state, reward, True, None
+            reward -= 20.0
         else:
-            return self.cur_state, reward, False, None
+            self.cur_state[
+                ROBOT_POSITION_IDX, self.robot_position[0], self.robot_position[1]
+            ] = FREE
+            self.robot_position = next_position
+            self.cur_state[
+                ROBOT_POSITION_IDX, self.robot_position[0], self.robot_position[1]
+            ] = OCCUPIED
+            if (
+                self.cur_state[
+                    UNVISITED_TARGETS_IDX,
+                    self.robot_position[0],
+                    self.robot_position[1],
+                ]
+                == OCCUPIED
+            ):
+                self.cur_state[
+                    UNVISITED_TARGETS_IDX,
+                    self.robot_position[0],
+                    self.robot_position[1],
+                ] = FREE
+                reward += 100.0
+                self.target_set.remove((self.robot_position[0], self.robot_position[1]))
+        for p in self.target_set:
+            dis = manhatton(p, self.robot_position)
+            reward += 1.0 / dis / len(self.target_set)
+        # print(f'robot position: {self.robot_position}, target number: {len(self.target_set)}')
+        if self.win():
+            return self.cur_state.copy(), reward, True, False, None
+        else:
+            return self.cur_state.copy(), reward, False, False, None
+
+
+def manhatton(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 
 def plot_env(env: Env):
