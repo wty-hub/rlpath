@@ -123,7 +123,7 @@ class DQNAgent:
         }
         path = self.save_dir / f"save_{self.curr_step}.chkpt"
         torch.save(checkpoint, path)
-        print("saved to " + path + " at step ", self.curr_step)
+        # print("saved to " + path + " at step ", self.curr_step)
 
     def load(self, path):
         checkpoint = torch.load(path)
